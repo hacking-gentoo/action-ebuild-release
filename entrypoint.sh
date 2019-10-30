@@ -62,6 +62,7 @@ eval `ssh-agent -s`
 mkdir -p ~/.ssh
 ssh-keyscan github.com >> ~/.ssh/known_hosts
 echo "${GHA_DEPLOY_KEY}" | ssh-add -
+ssh-add -l
 
 # Configure git
 git config --global user.name "${GITHUB_ACTOR}"
