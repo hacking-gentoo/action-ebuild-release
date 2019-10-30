@@ -66,6 +66,8 @@ echo "${GHA_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
 
 # Configure git
+echo git config --global user.name "${GITHUB_ACTOR}"
+echo git config --global user.email "${GITHUB_ACTOR}@github.com"
 git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@github.com"
 
