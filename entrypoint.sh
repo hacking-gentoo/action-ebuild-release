@@ -59,7 +59,7 @@ mkdir ~/overlay
 cd ~/overlay
 git init
 git remote add github "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${INPUT_OVERLAY}.git"
-git pull github "${GITHUB_REF}" --ff-only
+git pull github --ff-only ${INPUT_OVERLAY_BRANCH:-master}
 
 # Create the new ebuild.
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
