@@ -54,6 +54,10 @@ echo "    for ${ebuild_pkg}"
 echo "      version ${ebuild_ver} - ${ebuild_numver}"
 echo "        with name ${ebuild_name}"
 
+# Configure git
+git config --global user.name "${GITHUB_ACTOR}"
+git config --global user.email "${GITHUB_ACTOR}@github.com"
+
 # Checkout the overlay.
 mkdir ~/overlay
 cd ~/overlay
