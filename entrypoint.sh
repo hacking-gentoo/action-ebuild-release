@@ -77,7 +77,7 @@ ebuild "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild" manifest
 git add .
 
 # Check it with repoman
-repoman -dx full
+repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_numver}"
