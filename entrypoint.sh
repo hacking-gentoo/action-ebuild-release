@@ -59,8 +59,8 @@ echo "        with name ${ebuild_name}"
 
 # Configure ssh
 eval `ssh-agent -s`
-mkdir -p ~/.ssh
-ssh-keyscan github.com >> ~/.ssh/known_hosts
+mkdir -p /root/.ssh
+ssh-keyscan github.com >> /root/.ssh/known_hosts
 echo "${GHA_DEPLOY_KEY}"
 echo "${GHA_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
