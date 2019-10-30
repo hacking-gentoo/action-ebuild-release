@@ -58,7 +58,7 @@ echo "      version ${ebuild_ver} - ${ebuild_numver}"
 echo "        with name ${ebuild_name}"
 
 # Configure ssh
-eval `ssh-agent -t 60 -s`
+eval `ssh-agent -s`
 mkdir -p ~/.ssh
 ssh-keyscan github.com >> ~/.ssh/known_hosts
 echo "${GHA_DEPLOY_KEY}" | ssh-add -
