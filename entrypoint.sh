@@ -17,6 +17,9 @@ cd "${GITHUB_WORKSPACE}" || exit 2
 # Check for a tag
 [[ -z "${GITHUB_REF}" ]] && die "Expecting GITHUB_REF to be a tag"
 
+# Check for repository deploy key.
+[[ -z "${GHA_DEPLOY_KEY}" ]] && die "Must set GHA_DEPLOY_KEY"
+
 # If there isn't a .gentoo directory in the base of the workspace then bail
 [[ -d .gentoo ]] || die "No .gentoo directory in workspace root"
 
@@ -54,6 +57,11 @@ echo "    for ${ebuild_pkg}"
 echo "      version ${ebuild_ver} - ${ebuild_numver}"
 echo "        with name ${ebuild_name}"
 
+# Configure ssh
+eval `ssh-agent -t 60 -s`
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+echo "${GHA_DEPLOY_KEY}" | ssh-add -
+
 # Configure git
 git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@github.com"
@@ -62,7 +70,7 @@ git config --global user.email "${GITHUB_ACTOR}@github.com"
 mkdir ~/overlay
 cd ~/overlay
 git init
-git remote add github "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${INPUT_OVERLAY}.git"
+git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git pull github --ff-only ${INPUT_OVERLAY_BRANCH:-master}
 
 # Create the new ebuild.
