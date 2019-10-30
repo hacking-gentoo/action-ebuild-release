@@ -1,0 +1,9 @@
+name: 'action-ebuild-release'
+description: 'Create / update an ebuild in a repository'
+inputs:
+  overlay:
+    description: 'The overlay repository to operate on'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
