@@ -85,3 +85,4 @@ repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_numver}"
+git push github
