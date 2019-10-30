@@ -61,6 +61,7 @@ echo "        with name ${ebuild_name}"
 eval `ssh-agent -s`
 mkdir -p ~/.ssh
 ssh-keyscan github.com >> ~/.ssh/known_hosts
+echo "${GHA_DEPLOY_KEY}"
 echo "${GHA_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
 
@@ -72,6 +73,7 @@ git config --global user.email "${GITHUB_ACTOR}@github.com"
 mkdir ~/overlay
 cd ~/overlay
 git init
+echo git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git pull github --ff-only ${INPUT_OVERLAY_BRANCH:-master}
 
