@@ -63,7 +63,7 @@ git pull github --ff-only ${INPUT_OVERLAY_BRANCH:-master}
 
 # Create the new ebuild.
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
-cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}/*" "${ebuild_cat}/${ebuild_pkg}/"
+cp ${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}/* "${ebuild_cat}/${ebuild_pkg}/"
 cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
