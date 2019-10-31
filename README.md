@@ -9,8 +9,11 @@ Once configured creating a release will trigger the workflow and automatically:
   * create a new ebuild for the released version
   * fetch package archives
   * regenerate manifest files
-  * perform QA tests using repoman
+  * perform QA tests using [repoman](https://wiki.gentoo.org/wiki/Repoman)
   * deploy to an overlay repository
+
+Automatic pre-release testing can be easily included using
+[action-ebuild-test](https://github.com/hacking-gentoo/action-ebuild-test).
 
 ## Basic Usage
 
@@ -56,20 +59,13 @@ else
 fi
 
 KEYWORDS="amd64 x86"
-IUSE="test"
 SLOT="0"
 
-RESTRICT="!test? ( test )"
-
-RDEPEND="sys-apps/util-linux"
-DEPEND="test? ( ${RDEPEND} )"
-
-src_test() {
-    echo
-}
+RDEPEND=""
+DEPEND=""
 
 src_install() {
-    einstalldocs
+    ...
 }
 ```
 
