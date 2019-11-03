@@ -4,8 +4,31 @@ set -e
 function die()
 {
     echo "::error::$1"
+    echo "------------------------------------------------------------------------------------------------------------------------"
     exit 1
 }
+
+[[ ${GITHUB_REF} = refs/heads/* ]] && git_branch="${GITHUB_REF##*/}"
+[[ ${GITHUB_REF} = refs/tags/* ]] &&git_tag="${GITHUB_REF##*/}"
+
+cat << END
+------------------------------------------------------------------------------------------------------------------------
+                      _   _                       _           _ _     _                 _                     
+                     | | (_)                     | |         (_) |   | |               | |                    
+            __ _  ___| |_ _  ___  _ __ ______ ___| |__  _   _ _| | __| |______ _ __ ___| | ___  __ _ ___  ___ 
+           / _\` |/ __| __| |/ _ \| '_ \______/ _ \ '_ \| | | | | |/ _\` |______| '__/ _ \ |/ _ \/ _\` / __|/ _ \\
+          | (_| | (__| |_| | (_) | | | |    |  __/ |_) | |_| | | | (_| |      | | |  __/ |  __/ (_| \__ \  __/
+           \__,_|\___|\__|_|\___/|_| |_|     \___|_.__/ \__,_|_|_|\__,_|      |_|  \___|_|\___|\__,_|___/\___|
+ 
+          https://github.com/hacking-gentoo/action-ebuild-release                         (c) 2019 Max Hacking 
+------------------------------------------------------------------------------------------------------------------------
+GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+GITHUB_REF=${GITHUB_REF}
+git_branch=${git_branch}
+git_tag=${git_tag}
+------------------------------------------------------------------------------------------------------------------------
+END
+
 
 # Check for a GITHUB_WORKSPACE env variable
 [[ -z "${GITHUB_WORKSPACE}" ]] && die "Must set GITHUB_WORKSPACE in env"
@@ -58,7 +81,7 @@ echo "      version ${ebuild_ver} - ${ebuild_numver}"
 echo "        with name ${ebuild_name}"
 
 # Configure ssh
-eval `ssh-agent -s`
+eval "$(ssh-agent -s)"
 mkdir -p /root/.ssh
 ssh-keyscan github.com >> /root/.ssh/known_hosts
 echo "${GHA_DEPLOY_KEY}" | ssh-add -
@@ -73,17 +96,30 @@ mkdir ~/overlay
 cd ~/overlay
 git init
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
-git pull github --ff-only ${INPUT_OVERLAY_BRANCH:-master}
+git pull github --ff-only "${INPUT_OVERLAY_BRANCH:-master}"
 
-# Create the new ebuild.
+# Copy everything from the template to the new ebuild directory.
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
-cp ${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}/* "${ebuild_cat}/${ebuild_pkg}/"
+cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
+
+# Create the new ebuild - 9999 live version.
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
-unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
-sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
 sed-or-die "GITHUB_REF" "master" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+
+# Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
+# shellcheck disable=SC1090
+source "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+# shellcheck disable=SC2005,SC2046
+new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
+sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+
+# Create the new ebuild - $ebuild_ver version.
+unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
+sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
 sed-or-die "GITHUB_REF" "master" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
+
+# Build manifests
 ebuild "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}" manifest
 ebuild "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild" manifest
 
@@ -95,4 +131,6 @@ repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_numver}"
-git push --set-upstream github ${INPUT_OVERLAY_BRANCH:-master}
+git push --set-upstream github "${INPUT_OVERLAY_BRANCH:-master}"
+
+echo "------------------------------------------------------------------------------------------------------------------------"
