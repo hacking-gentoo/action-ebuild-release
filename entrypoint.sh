@@ -72,14 +72,11 @@ ebuild_cat="${ebuild_path%%/*}"
 ebuild_ver="${GITHUB_REF##*/}"
 [[ ${ebuild_ver} =~ ${SEMVER_REGEX} ]] || die "Unexpected release version - ${ebuild_ver}"
 
-# Work out the version number only
-ebuild_numver="${ebuild_ver#${ebuild_pkg}-}"
-
 # Display our findings thus far
 echo "Located ebuild at ${ebuild_path}"
 echo "  in category ${ebuild_cat}"
 echo "    for ${ebuild_pkg}"
-echo "      version ${ebuild_ver} - ${ebuild_numver}"
+echo "      version ${ebuild_ver}"
 echo "        with name ${ebuild_name}"
 
 # Configure ssh
@@ -105,25 +102,30 @@ mkdir -p "${ebuild_cat}/${ebuild_pkg}"
 cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
 
 # Create the new ebuild - 9999 live version.
-unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
-sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
-sed-or-die "GITHUB_REF" "master" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+ebuild_file_live="${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_live}" 
+sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_live}"
+sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
 
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
-# shellcheck disable=SC1090
-source "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
-# shellcheck disable=SC2005,SC2046
-new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
-sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
+sed -i '/^KEYWORDS.*/d' "${ebuild_file_live}"
 
 # Create the new ebuild - $ebuild_ver version.
-unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
-sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
-sed-or-die "GITHUB_REF" "master" "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild"
+ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
+unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_new}"
+sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_new}"
+sed-or-die "GITHUB_REF" "master" "${ebuild_file_new}"
+
+# If this is a pre-release then fix the KEYWORDS variable
+# shellcheck disable=SC1090
+#source "${ebuild_file_new}"
+# shellcheck disable=SC2005,SC2046
+#new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
+#sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
 
 # Build manifests
-ebuild "${ebuild_cat}/${ebuild_pkg}/${ebuild_name}" manifest
-ebuild "${ebuild_cat}/${ebuild_pkg}/${ebuild_ver}.ebuild" manifest
+ebuild "${ebuild_file_live}" manifest
+ebuild "${ebuild_file_new}" manifest
 
 # Add it to git
 git add .
