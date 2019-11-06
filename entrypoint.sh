@@ -137,7 +137,7 @@ git add .
 repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
-git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_numver}"
+git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_ver}"
 git push --set-upstream github master:"${INPUT_OVERLAY_BRANCH:-master}"
 
 echo "------------------------------------------------------------------------------------------------------------------------"
