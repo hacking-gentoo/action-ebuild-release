@@ -8,8 +8,10 @@ function die()
     exit 1
 }
 
+SEMVER_REGEX="^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*$"
+
 [[ ${GITHUB_REF} = refs/heads/* ]] && git_branch="${GITHUB_REF##*/}"
-[[ ${GITHUB_REF} = refs/tags/* ]] &&git_tag="${GITHUB_REF##*/}"
+[[ ${GITHUB_REF} = refs/tags/* ]] && git_tag="${GITHUB_REF##*/}"
 
 cat << END
 ------------------------------------------------------------------------------------------------------------------------
@@ -66,9 +68,9 @@ ebuild_cat="${ebuild_path%%/*}"
 [[ -z "${ebuild_cat}" ]] && die "Unable to calculate ebuild category"
 
 # Work out from the tag what version we are releasing.
-# e.g. hacking-bash-lib-1.0.0
+# e.g. 1.0.0
 ebuild_ver="${GITHUB_REF##*/}"
-[[ ${ebuild_ver} =~ ^${ebuild_pkg}-.* ]] || die "Unexpected release version - ${ebuild_ver}"
+[[ ${ebuild_ver} =~ ${SEMVER_REGEX} ]] || die "Unexpected release version - ${ebuild_ver}"
 
 # Work out the version number only
 ebuild_numver="${ebuild_ver#${ebuild_pkg}-}"
