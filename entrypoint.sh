@@ -30,8 +30,6 @@ git_branch=${git_branch}
 git_tag=${git_tag}
 ------------------------------------------------------------------------------------------------------------------------
 END
-cat "${GITHUB_EVENT_PATH}"
-echo "------------------------------------------------------------------------------------------------------------------------"
 
 # Check for a GITHUB_WORKSPACE env variable
 [[ -z "${GITHUB_WORKSPACE}" ]] && die "Must set GITHUB_WORKSPACE in env"
