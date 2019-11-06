@@ -30,7 +30,8 @@ git_branch=${git_branch}
 git_tag=${git_tag}
 ------------------------------------------------------------------------------------------------------------------------
 END
-
+cat ${GITHUB_EVENT_PATH}
+echo "------------------------------------------------------------------------------------------------------------------------"
 
 # Check for a GITHUB_WORKSPACE env variable
 [[ -z "${GITHUB_WORKSPACE}" ]] && die "Must set GITHUB_WORKSPACE in env"
@@ -117,11 +118,13 @@ sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_new}"
 sed-or-die "GITHUB_REF" "master" "${ebuild_file_new}"
 
 # If this is a pre-release then fix the KEYWORDS variable
-# shellcheck disable=SC1090
-#source "${ebuild_file_new}"
-# shellcheck disable=SC2005,SC2046
-#new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
-#sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
+if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
+	# shellcheck disable=SC1090
+	source "${ebuild_file_new}"
+	# shellcheck disable=SC2005,SC2046
+	new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
+	sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
+fi
 
 # Build manifests
 ebuild "${ebuild_file_live}" manifest
