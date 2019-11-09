@@ -96,6 +96,10 @@ git init
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git pull github --ff-only "${INPUT_OVERLAY_BRANCH:-master}"
 
+# Ensure that this ebuild's category is present in categories file.
+echo "${ebuild_cat}" >> profiles/categories
+sort -u -o profiles/categories profiles/categories
+
 # Copy everything from the template to the new ebuild directory.
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
 cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
@@ -124,9 +128,9 @@ if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
 	sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
 fi
 
-# Build manifests
-ebuild "${ebuild_file_live}" manifest
-ebuild "${ebuild_file_new}" manifest
+# Build / rebuild manifests
+ebuild "${ebuild_file_live}" manifest --force
+ebuild "${ebuild_file_new}" manifest --force
 
 # Add it to git
 git add .
