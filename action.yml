@@ -5,7 +5,7 @@ inputs:
     description: 'The overlay repository to operate on'
     required: true
   overlay_branch:
-    description: 'The repository branch operate on'
+    description: 'The repository branch to operate on'
     required: false 
 runs:
   using: 'docker'
