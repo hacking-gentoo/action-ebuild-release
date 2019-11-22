@@ -121,10 +121,7 @@ sed-or-die "GITHUB_REF" "master" "${ebuild_file_new}"
 
 # If this is a pre-release then fix the KEYWORDS variable
 if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
-	# shellcheck disable=SC1090
-	source "${ebuild_file_new}"
-	# shellcheck disable=SC2005,SC2046
-	new_keywords=$(echo $(for k in $KEYWORDS ; do echo "~${k}"; done))
+	new_keywords="$(unstable_keywords "${ebuild_file_new}")"
 	sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
 fi
 
