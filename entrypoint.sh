@@ -111,7 +111,7 @@ sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_live}"
 sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
 
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
-sed -i '/^KEYWORDS.*/d' "${ebuild_file_live}"
+sed -i 's/^KEYWORDS.*/KEYWORDS=""/g' "${ebuild_file_live}"
 
 # Create the new ebuild - $ebuild_ver version.
 ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
