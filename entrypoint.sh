@@ -108,6 +108,7 @@ git checkout "${overlay_branch}"
 git rebase master || true
 
 # Ensure that this ebuild's category is present in categories file.
+mkdir -p profiles
 echo "${ebuild_cat}" >> profiles/categories
 sort -u -o profiles/categories profiles/categories
 
