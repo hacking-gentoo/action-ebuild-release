@@ -71,6 +71,9 @@ ebuild_cat="${ebuild_path%%/*}"
 ebuild_ver="${GITHUB_REF##*/}"
 [[ ${ebuild_ver} =~ ${SEMVER_REGEX} ]] || die "Unexpected release version - ${ebuild_ver}"
 
+# Calculate overlay branch name
+overlay_branch="${INPUT_OVERLAY_BRANCH:-${ebuild_cat}/${ebuild_pkg}}"
+
 # Display our findings thus far
 echo "Located ebuild at ${ebuild_path}"
 echo "  in category ${ebuild_cat}"
@@ -89,12 +92,20 @@ ssh-add -l
 git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@github.com"
 
-# Checkout the overlay.
-mkdir ~/overlay
-cd ~/overlay
+# Checkout the overlay (master).
+overlay_dir="/var/db/repos/action-ebuild-release"
+mkdir -p "${overlay_dir}"
+cd "${overlay_dir}"
 git init
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
-git pull github --ff-only "${INPUT_OVERLAY_BRANCH:-master}"
+git pull github master 
+
+# Check out the branch or create a new one
+git pull github "${overlay_branch}" 2>/dev/null || git branch "${overlay_branch}"
+git checkout "${overlay_branch}"
+
+# Try to rebase.
+git rebase master || true
 
 # Ensure that this ebuild's category is present in categories file.
 echo "${ebuild_cat}" >> profiles/categories
@@ -137,6 +148,6 @@ repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_ver}"
-git push --set-upstream github master:"${INPUT_OVERLAY_BRANCH:-master}"
+git push --force --set-upstream github "${overlay_branch}"
 
 echo "------------------------------------------------------------------------------------------------------------------------"
