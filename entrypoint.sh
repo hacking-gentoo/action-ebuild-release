@@ -82,6 +82,7 @@ echo "      version ${ebuild_ver}"
 echo "        with name ${ebuild_name}"
 
 # Configure ssh
+echo "Configuring ssh agent"
 eval "$(ssh-agent -s)"
 mkdir -p /root/.ssh
 ssh-keyscan github.com >> /root/.ssh/known_hosts
@@ -89,10 +90,12 @@ echo "${GHA_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
 
 # Configure git
+echo "Configuring git"
 git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@github.com"
 
 # Checkout the overlay (master).
+echo "Checkout overlay (master)"
 overlay_dir="/var/db/repos/action-ebuild-release"
 mkdir -p "${overlay_dir}"
 cd "${overlay_dir}"
@@ -100,7 +103,17 @@ git init
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git pull github master 
 
+# Check out the branch or create a new one
+echo "Checkout overlay (${overlay_branch})"
+git pull github "${overlay_branch}" 2>/dev/null || git branch "${overlay_branch}"
+git checkout "${overlay_branch}"
+
+# Try to rebase.
+echo "Attempting to rebase against master"
+git rebase master || true
+
 # Add the overlay to repos.conf
+echo "Adding overlay to repos.conf"
 repo_name="$(cat profiles/repo_name 2>/dev/null || true)"
 [[ -z "${repo_name}" ]] && repo_name="action-ebuild-release"
 cat << END > /etc/portage/repos.conf/action-ebuild-release
@@ -109,41 +122,41 @@ priority = 50
 location = ${overlay_dir}
 END
 
-# Check out the branch or create a new one
-git pull github "${overlay_branch}" 2>/dev/null || git branch "${overlay_branch}"
-git checkout "${overlay_branch}"
-
-# Try to rebase.
-git rebase master || true
-
 # Ensure that this ebuild's category is present in categories file.
+echo "Checking this ebuild's category is present in categories file"
 mkdir -p profiles
 echo "${ebuild_cat}" >> profiles/categories
 sort -u -o profiles/categories profiles/categories
 
 # Copy everything from the template to the new ebuild directory.
+echo "Copying ebuild directory"
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
 cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
 
 # Create the new ebuild - 9999 live version.
+echo "Creating live ebuild"
 ebuild_file_live="${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_live}" 
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_live}"
 sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
 
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
+echo "Fixing up KEYWORDS variable in new ebuild - live version"
 sed -i 's/^KEYWORDS.*/KEYWORDS=""/g' "${ebuild_file_live}"
 
 # Build / rebuild manifests
+echo "Rebuilding manifests (live ebuild)" 
 ebuild "${ebuild_file_live}" manifest --force
 
 # Create the new ebuild - $ebuild_ver version.
+echo "Creating new ebuild"
 ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_new}"
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_new}"
 sed-or-die "GITHUB_REF" "master" "${ebuild_file_new}"
 
 # Build / rebuild manifests
+echo "Rebuilding manifests (new ebuild)" 
 ebuild "${ebuild_file_new}" manifest --force
 
 # If no KEYWORDS are specified try to calculate the best keywords
@@ -159,16 +172,23 @@ if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
 fi
 
 # Build / rebuild manifests
+echo "Rebuilding manifests (new ebuild, pass two)" 
 ebuild "${ebuild_file_new}" manifest --force
 
 # Add it to git
+echo "Adding files to git"
 git add .
 
 # Check it with repoman
+echo "Checking with repoman"
 repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
+echo "Committing new ebuild"
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_ver}"
+
+# Push git repo branch
+echo "Pushing to git repository"
 git push --force --set-upstream github "${overlay_branch}"
 
 echo "------------------------------------------------------------------------------------------------------------------------"
