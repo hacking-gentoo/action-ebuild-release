@@ -100,6 +100,15 @@ git init
 git remote add github "git@github.com:${INPUT_OVERLAY}.git"
 git pull github master 
 
+# Add the overlay to repos.conf
+repo_name="$(cat profiles/repo_name 2>/dev/null || true)"
+[[ -z "${repo_name}" ]] && repo_name="action-ebuild-release"
+cat << END > /etc/portage/repos.conf/action-ebuild-release
+[${repo_name}]
+priority = 50
+location = ${overlay_dir}
+END
+
 # Check out the branch or create a new one
 git pull github "${overlay_branch}" 2>/dev/null || git branch "${overlay_branch}"
 git checkout "${overlay_branch}"
@@ -125,11 +134,23 @@ sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
 sed -i 's/^KEYWORDS.*/KEYWORDS=""/g' "${ebuild_file_live}"
 
+# Build / rebuild manifests
+ebuild "${ebuild_file_live}" manifest --force
+
 # Create the new ebuild - $ebuild_ver version.
 ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_new}"
 sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_new}"
 sed-or-die "GITHUB_REF" "master" "${ebuild_file_new}"
+
+# Build / rebuild manifests
+ebuild "${ebuild_file_new}" manifest --force
+
+# If no KEYWORDS are specified try to calculate the best keywords
+if [[ -z "$(unstable_keywords "${ebuild_file_new}")" ]]; then
+	new_keywords="$(kwtool b "${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}")"
+	sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
+fi
 
 # If this is a pre-release then fix the KEYWORDS variable
 if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
@@ -138,7 +159,6 @@ if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
 fi
 
 # Build / rebuild manifests
-ebuild "${ebuild_file_live}" manifest --force
 ebuild "${ebuild_file_new}" manifest --force
 
 # Add it to git
