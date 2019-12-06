@@ -1,11 +1,17 @@
 name: 'action-ebuild-release'
 description: 'Create / update an ebuild in a repository'
 inputs:
-  overlay:
-    description: 'The overlay repository to operate on'
+  auth_token:
+    description: 'The authentiation token to use when creating pull requests (eg. GITHUB_TOKEN)'
+    required: true
+  deploy_key:
+    description: 'The deploy key used when accessing the overlay repository.'
+    required: true
+  overlay_repo:
+    description: 'The overlay repository to operate on (eg. hacking-gentoo/overlay)'
     required: true
   overlay_branch:
-    description: 'The repository branch to operate on'
+    description: 'The repository branch to operate on. If none specified a topic branch named after the category/package will be used.'
     required: false 
 runs:
   using: 'docker'

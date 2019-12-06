@@ -25,10 +25,10 @@ function create_pull_request()
 
 	api_ver="v3"
 	base_url="https://api.github.com"
-	auth_hdr="Authorization: token ${GITHUB_TOKEN}"
+	auth_hdr="Authorization: token ${INPUT_AUTH_TOKEN}"
 	header="Accept: application/vnd.github.${api_ver}+json"
 	header="${header}; application/vnd.github.antiope-preview+json; application/vnd.github.shadow-cat-preview+json"
-	repo_url="${base_url}/repos/${INPUT_OVERLAY}"
+	repo_url="${base_url}/repos/${INPUT_OVERLAY_REPO}"
 	pulls_url="${repo_url}/pulls"
 
     # Check if the branch already has a pull request open
@@ -77,17 +77,17 @@ END
 [[ -z "${GITHUB_WORKSPACE}" ]] && die "Must set GITHUB_WORKSPACE in env"
 cd "${GITHUB_WORKSPACE}" || exit 2
 
-# Check for github token.
-[[ -z "${GITHUB_TOKEN}" ]] && die "Must set GITHUB_TOKEN"
-
-# Check for an overlay
-[[ -z "${INPUT_OVERLAY}" ]] && die "Must set overlay input"
-
 # Check for a tag
 [[ -z "${GITHUB_REF}" ]] && die "Expecting GITHUB_REF to be a tag"
 
+# Check for github token.
+[[ -z "${INPUT_AUTH_TOKEN}" ]] && die "Must set INPUT_AUTH_TOKEN"
+
+# Check for an overlay
+[[ -z "${INPUT_OVERLAY_REPO}" ]] && die "Must set INPUT_OVERLAY_REPO"
+
 # Check for repository deploy key.
-[[ -z "${GHA_DEPLOY_KEY}" ]] && die "Must set GHA_DEPLOY_KEY"
+[[ -z "${INPUT_DEPLOY_KEY}" ]] && die "Must set INPUT_DEPLOY_KEY"
 
 # If there isn't a .gentoo directory in the base of the workspace then bail
 [[ -d .gentoo ]] || die "No .gentoo directory in workspace root"
@@ -131,7 +131,7 @@ echo "Configuring ssh agent"
 eval "$(ssh-agent -s)"
 mkdir -p /root/.ssh
 ssh-keyscan github.com >> /root/.ssh/known_hosts
-echo "${GHA_DEPLOY_KEY}" | ssh-add -
+echo "${INPUT_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
 
 # Configure git
@@ -145,7 +145,7 @@ overlay_dir="/var/db/repos/action-ebuild-release"
 mkdir -p "${overlay_dir}"
 cd "${overlay_dir}"
 git init
-git remote add github "git@github.com:${INPUT_OVERLAY}.git"
+git remote add github "git@github.com:${INPUT_OVERLAY_REPO}.git"
 git pull github master 
 
 # Check out the branch or create a new one
