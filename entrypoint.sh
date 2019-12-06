@@ -32,7 +32,7 @@ function create_pull_request()
 	pulls_url="${repo_url}/pulls"
 
     # Check if the branch already has a pull request open
-    data="{\"base_url\":${tgt}, \"head\":${src}, \"body\":${body}}"
+    data="{\"base_url\":${tgt}, \"head\":${src}}"
     echo "curl -sSL -H ${header} -X GET --data ${data} ${pulls_url}"
     resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" -X GET --data "${data}" "${pulls_url}")
     echo -e "Raw response:\n${resp}"
