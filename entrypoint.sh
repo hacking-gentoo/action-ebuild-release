@@ -8,6 +8,47 @@ function die()
     exit 1
 }
 
+function create_pull_request() 
+{
+    # JSON strings
+    src="$(echo -n "${1}" | jq --raw-input --slurp ".")"	# from this branch
+    tgt="$(echo -n "${2}" | jq --raw-input --slurp ".")"	# pull request TO this target
+    body="$(echo -n "${3}" | jq --raw-input --slurp ".")"	# this is the content of the message
+    title="$(echo -n "${4}" | jq --raw-input --slurp ".")"  # pull request title
+
+    # JSON boolean
+    if [[ "${5}" ==  "true" ]]; then
+      draft="true";
+    else
+      draft="false";
+    fi
+
+	api_ver="v3"
+	base_url="https://api.github.com"
+	auth_hdr="Authorization: token ${GITHUB_TOKEN}"
+	header="Accept: application/vnd.github.${api_ver}+json"
+	header="${header}; application/vnd.github.antiope-preview+json; application/vnd.github.shadow-cat-preview+json"
+	repo_url="${base_url}/repos/${INPUT_OVERLAY}"
+	pulls_url="${repo_url}/pulls"
+
+    # Check if the branch already has a pull request open
+    data="{\"base_url\":${tgt}, \"head\":${src}, \"body\":${body}}"
+    resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}" -X GET --data "${data}" "${pulls_url}")
+    pr=$(echo "${resp}" | jq --raw-output '.[] | .head.ref')
+    echo "resp ref: ${pr}"
+
+    if [[ "${pr}" == "${src}" ]]; then
+	    # A pull request is already open
+        echo "Pull request from ${src} to ${tgt} is already open!"
+    else
+        # Post new pull request
+        data="{\"title\":${title}, \"body\":${body}, \"base_url\":${tgt}, \"head\":${src}, \"draft\":${draft}}"
+        echo "curl --user ${GITHUB_ACTOR} -X POST --data ${data} ${pulls_url}"
+        curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}" -X POST --data "${data}" "${pulls_url}"
+        echo $?
+    fi
+}
+
 SEMVER_REGEX="^(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*$"
 
 [[ ${GITHUB_REF} = refs/heads/* ]] && git_branch="${GITHUB_REF##*/}"
@@ -24,6 +65,7 @@ cat << END
  
           https://github.com/hacking-gentoo/action-ebuild-release                         (c) 2019 Max Hacking 
 ------------------------------------------------------------------------------------------------------------------------
+GITHUB_ACTOR=${GITHUB_ACTOR}
 GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
 GITHUB_REF=${GITHUB_REF}
 git_branch=${git_branch}
@@ -190,5 +232,11 @@ git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild
 # Push git repo branch
 echo "Pushing to git repository"
 git push --force --set-upstream github "${overlay_branch}"
+
+# Create a pull request
+echo "Creating pull request" 
+title="Automated update of ${ebuild_cat}/${ebuild_pkg}"
+msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
+create_pull_request "${overlay_branch}" "master" "${msg}" "${title}" "false" 
 
 echo "------------------------------------------------------------------------------------------------------------------------"
