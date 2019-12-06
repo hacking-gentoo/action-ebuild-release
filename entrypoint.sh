@@ -34,8 +34,9 @@ function create_pull_request()
     # Check if the branch already has a pull request open
     data="{\"base_url\":${tgt}, \"head\":${src}, \"body\":${body}}"
     resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" -X GET --data "${data}" "${pulls_url}")
-    echo "Response ref: ${pr}"
+    echo -e "Raw response:\n${resp}"
     pr=$(echo "${resp}" | jq --raw-output '.[] | .head.ref')
+    echo "Response ref: ${pr}"
 
     if [[ "${pr}" == "${src}" ]]; then
 	    # A pull request is already open
