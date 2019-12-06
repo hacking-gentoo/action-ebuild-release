@@ -25,9 +25,8 @@ function create_pull_request()
 
 	api_ver="v3"
 	base_url="https://api.github.com"
-	auth_hdr="Authorization: token ${INPUT_DEPLOY_KEY}"
-	header="Accept: application/vnd.github.${api_ver}+json"
-	header="${header}; application/vnd.github.antiope-preview+json; application/vnd.github.shadow-cat-preview+json"
+	auth_hdr="Authorization: token ${INPUT_AUTH_TOKEN}"
+	header="Accept: application/vnd.github.${api_ver}+json; application/vnd.github.antiope-preview+json; application/vnd.github.shadow-cat-preview+json"
 	repo_url="${base_url}/repos/${INPUT_OVERLAY_REPO}"
 	pulls_url="${repo_url}/pulls"
 
