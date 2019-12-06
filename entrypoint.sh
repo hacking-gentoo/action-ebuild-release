@@ -33,7 +33,7 @@ function create_pull_request()
 
     # Check if the branch already has a pull request open
     data="{\"base_url\":${tgt}, \"head\":${src}, \"body\":${body}}"
-    resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}" -X GET --data "${data}" "${pulls_url}")
+    resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" -X GET --data "${data}" "${pulls_url}")
     echo "Response ref: ${pr}"
     pr=$(echo "${resp}" | jq --raw-output '.[] | .head.ref')
 
@@ -44,7 +44,7 @@ function create_pull_request()
         # Post new pull request
         data="{\"title\":${title}, \"body\":${body}, \"base_url\":${tgt}, \"head\":${src}, \"draft\":${draft}}"
         echo "curl --user ${GITHUB_ACTOR} -X POST --data ${data} ${pulls_url}"
-        curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}" -X POST --data "${data}" "${pulls_url}"
+        curl -sSL -H "${auth_hdr}" -H "${header}" -X POST --data "${data}" "${pulls_url}"
         echo $?
     fi
 }
