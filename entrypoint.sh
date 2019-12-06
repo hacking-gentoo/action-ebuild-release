@@ -11,10 +11,10 @@ function die()
 function create_pull_request() 
 {
     # JSON strings
-    src="$(echo -n "${1}" | jq --raw-input --slurp ".")"	# from this branch
-    tgt="$(echo -n "${2}" | jq --raw-input --slurp ".")"	# pull request TO this target
-    body="$(echo -n "${3}" | jq --raw-input --slurp ".")"	# this is the content of the message
-    title="$(echo -n "${4}" | jq --raw-input --slurp ".")"  # pull request title
+    src="\"${1}\""		# from this branch
+    tgt="\"${2}\""		# pull request TO this target
+    body="\"${3}\""		# this is the content of the message
+    title="\"${4}\""	# pull request title
 
     # JSON boolean
     if [[ "${5}" ==  "true" ]]; then
@@ -34,8 +34,8 @@ function create_pull_request()
     # Check if the branch already has a pull request open
     data="{\"base_url\":${tgt}, \"head\":${src}, \"body\":${body}}"
     resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}" -X GET --data "${data}" "${pulls_url}")
+    echo "Response ref: ${pr}"
     pr=$(echo "${resp}" | jq --raw-output '.[] | .head.ref')
-    echo "resp ref: ${pr}"
 
     if [[ "${pr}" == "${src}" ]]; then
 	    # A pull request is already open
@@ -76,6 +76,9 @@ END
 # Check for a GITHUB_WORKSPACE env variable
 [[ -z "${GITHUB_WORKSPACE}" ]] && die "Must set GITHUB_WORKSPACE in env"
 cd "${GITHUB_WORKSPACE}" || exit 2
+
+# Check for github token.
+[[ -z "${GITHUB_TOKEN}" ]] && die "Must set GITHUB_TOKEN"
 
 # Check for an overlay
 [[ -z "${INPUT_OVERLAY}" ]] && die "Must set overlay input"
