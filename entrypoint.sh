@@ -31,7 +31,7 @@ function create_pull_request()
 	pulls_url="${repo_url}/pulls"
 
     # Check if the branch already has a pull request open
-    data="{\"base_url\":${tgt}, \"head\":${src}}"
+    data="{\"base\":${tgt}, \"head\":${src}}"
     echo "curl -sSL -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X GET --data \"${data}\" \"${pulls_url}\""
     resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X GET --data "${data}" "${pulls_url}")
     echo -e "Raw response:\n${resp}"
@@ -43,7 +43,7 @@ function create_pull_request()
         echo "Pull request from ${src} to ${tgt} is already open!"
     else
         # Post new pull request
-        data="{\"title\":${title}, \"body\":${body}, \"base_url\":${tgt}, \"head\":${src}, \"draft\":${draft}}"
+        data="{\"title\":${title}, \"body\":${body}, \"base\":${tgt}, \"head\":${src}, \"draft\":${draft}}"
         echo "curl -sSL -H \"${auth_hdr}\" -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X POST --data \"${data}\" \"${pulls_url}\""
         curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X POST --data "${data}" "${pulls_url}"
         echo $?
