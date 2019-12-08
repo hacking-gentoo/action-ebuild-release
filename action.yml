@@ -2,7 +2,7 @@ name: 'action-ebuild-release'
 description: 'Create / update an ebuild in a repository'
 inputs:
   auth_token:
-    description: 'The authentiation token to use when creating pull requests (eg. GITHUB_TOKEN)'
+    description: 'The authentiation token to use when creating pull requests.'
     required: true
   deploy_key:
     description: 'The deploy key used when accessing the overlay repository.'
