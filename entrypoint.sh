@@ -10,13 +10,18 @@ function die()
 
 function create_pull_request() 
 {
-    # JSON strings
-    src="\"${1}\""		# from this branch
-    tgt="\"${2}\""		# pull request TO this target
-    body="\"${3}\""		# this is the content of the message
-    title="\"${4}\""	# pull request title
+	local src tgt title body draft api_ver base_url auth_hdr header pulls_url repo_base query_url resp pr data
+	
+    src="${1}"		# from this branch
+    tgt="${2}"		# pull request TO this target
+    title="${3}"	# pull request title
+    body="${4}"		# this is the content of the message
 
-    # JSON boolean
+	[[ -z "${src}" ]] && die "create_pull_request() requires a source branch as parameter 1"
+	[[ -z "${tgt}" ]] && die "create_pull_request() requires a target branch as parameter 2"
+	[[ -z "${title}" ]] && die "create_pull_request() requires a title as parameter 3"
+	[[ -z "${body}" ]] && die "create_pull_request() requires a body as parameter 4"
+
     if [[ "${5}" ==  "true" ]]; then
       draft="true";
     else
@@ -27,26 +32,26 @@ function create_pull_request()
 	base_url="https://api.github.com"
 	auth_hdr="Authorization: token ${INPUT_AUTH_TOKEN}"
 	header="Accept: application/vnd.github.${api_ver}+json; application/vnd.github.antiope-preview+json; application/vnd.github.shadow-cat-preview+json"
-	repo_url="${base_url}/repos/${INPUT_OVERLAY_REPO}"
-	pulls_url="${repo_url}/pulls"
+	pulls_url="${base_url}/repos/${INPUT_OVERLAY_REPO}/pulls"
+	repo_base="${INPUT_OVERLAY_REPO%/*}"
 
     # Check if the branch already has a pull request open
-    data="{\"base\":${tgt}, \"head\":${src}}"
-    echo "curl -sSL -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X GET --data \"${data}\" \"${pulls_url}\""
-    resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X GET --data "${data}" "${pulls_url}")
+    query_url="${pulls_url}?base=${tgt}&head=${repo_base}:${src}&state=open"
+    echo "curl -sSL -H \"${auth_hdr}\" -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X GET \"${query_url}\""
+    resp=$(curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X GET "${query_url}")
     echo -e "Raw response:\n${resp}"
     pr=$(echo "${resp}" | jq --raw-output '.[] | .head.ref')
     echo "Response ref: ${pr}"
 
-    if [[ "${pr}" == "${src}" ]]; then
+    if [[ -n "${pr}" ]]; then
 	    # A pull request is already open
         echo "Pull request from ${src} to ${tgt} is already open!"
     else
         # Post new pull request
-        data="{\"title\":${title}, \"body\":${body}, \"base\":${tgt}, \"head\":${src}, \"draft\":${draft}}"
+        data="{\"base\":\"${tgt}\", \"head\":\"${src}\", \"title\":\"${title}\", \"body\":\"${body}\", \"draft\":\"${draft}\"}"
         echo "curl -sSL -H \"${auth_hdr}\" -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X POST --data \"${data}\" \"${pulls_url}\""
-        curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X POST --data "${data}" "${pulls_url}"
-        echo $?
+        curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X POST --data "${data}" "${pulls_url}" || \
+        	die "Unable to create pull request"
     fi
 }
 
@@ -241,6 +246,6 @@ git push --force --set-upstream github "${overlay_branch}"
 echo "Creating pull request" 
 title="Automated update of ${ebuild_cat}/${ebuild_pkg}"
 msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
-create_pull_request "${overlay_branch}" "master" "${msg}" "${title}" "false" 
+create_pull_request "${overlay_branch}" "master" "${title}" "${msg}" "false" 
 
 echo "------------------------------------------------------------------------------------------------------------------------"
