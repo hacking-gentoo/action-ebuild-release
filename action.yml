@@ -12,7 +12,11 @@ inputs:
     required: true
   overlay_branch:
     description: 'The repository branch to operate on. If none specified a topic branch named after the category/package will be used.'
-    required: false 
+    required: false
+  package_only:
+    description: 'This is a package only ebuild for upstream source code.'
+    required: false
+    default: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
