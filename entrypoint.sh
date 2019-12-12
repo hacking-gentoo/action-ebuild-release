@@ -156,7 +156,7 @@ git pull github master
 
 # Check out the branch or create a new one
 echo "Checkout overlay (${overlay_branch})"
-git pull github "${overlay_branch}" 2>/dev/null || git branch "${overlay_branch}"
+git pull github "${overlay_branch}" 2>/dev/null || true
 git checkout -b "${overlay_branch}"
 
 # Try to rebase.
