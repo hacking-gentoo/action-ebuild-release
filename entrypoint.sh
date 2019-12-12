@@ -71,12 +71,12 @@ cat << END
  
           https://github.com/hacking-gentoo/action-ebuild-release                         (c) 2019 Max Hacking 
 ------------------------------------------------------------------------------------------------------------------------
-INPUT_PACKAGE_ONLY=\"${INPUT_PACKAGE_ONLY}\"
-GITHUB_ACTOR=\"${GITHUB_ACTOR}\"
-GITHUB_REPOSITORY=\"${GITHUB_REPOSITORY}\"
-GITHUB_REF=\"${GITHUB_REF}\"
-git_branch=\"${git_branch}\"
-git_tag=\"${git_tag}\"
+INPUT_PACKAGE_ONLY="${INPUT_PACKAGE_ONLY}"
+GITHUB_ACTOR="${GITHUB_ACTOR}"
+GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"
+GITHUB_REF="${GITHUB_REF}"
+git_branch="${git_branch}"
+git_tag="${git_tag}"
 ------------------------------------------------------------------------------------------------------------------------
 END
 
@@ -214,6 +214,9 @@ fi
 # Build / rebuild manifests
 echo "Rebuilding manifests (new ebuild)" 
 ebuild "${ebuild_file_new}" manifest --force
+
+echo "New ebuild (${ebuild_file_new}):" 
+cat "${ebuild_file_new}"
 
 # If no KEYWORDS are specified try to calculate the best keywords
 if [[ -z "$(unstable_keywords "${ebuild_file_new}")" ]]; then
