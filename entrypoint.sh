@@ -224,7 +224,7 @@ emerge --metadata "${repo_name}"
 # If no KEYWORDS are specified try to calculate the best keywords
 if [[ -z "$(unstable_keywords "${ebuild_file_new}")" ]]; then
 	echo "kwtool b ${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}::${repo_name}"
-	kwtool b "${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}::${repo_name}"
+	kwtool -N b "${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}::${repo_name}"
 	new_keywords="$(kwtool b "${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}")"
 	echo "Using best keywords: ${new_keywords}"
 	sed-or-die '^KEYWORDS.*' "KEYWORDS=\"${new_keywords}\"" "${ebuild_file_new}"
