@@ -71,11 +71,12 @@ cat << END
  
           https://github.com/hacking-gentoo/action-ebuild-release                         (c) 2019 Max Hacking 
 ------------------------------------------------------------------------------------------------------------------------
-GITHUB_ACTOR=${GITHUB_ACTOR}
-GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
-GITHUB_REF=${GITHUB_REF}
-git_branch=${git_branch}
-git_tag=${git_tag}
+INPUT_PACKAGE_ONLY=\"${INPUT_PACKAGE_ONLY}\"
+GITHUB_ACTOR=\"${GITHUB_ACTOR}\"
+GITHUB_REPOSITORY=\"${GITHUB_REPOSITORY}\"
+GITHUB_REF=\"${GITHUB_REF}\"
+git_branch=\"${git_branch}\"
+git_tag=\"${git_tag}\"
 ------------------------------------------------------------------------------------------------------------------------
 END
 
@@ -188,8 +189,10 @@ cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${
 echo "Creating live ebuild"
 ebuild_file_live="${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_live}" 
-sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_live}"
-sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
+if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
+	sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_live}"
+	sed-or-die "GITHUB_REF" "master" "${ebuild_file_live}"
+fi
 
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
 echo "Fixing up KEYWORDS variable in new ebuild - live version"
