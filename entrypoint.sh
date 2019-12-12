@@ -219,6 +219,8 @@ ebuild "${ebuild_file_new}" manifest --force
 echo "New ebuild (${ebuild_file_new}):" 
 cat "${ebuild_file_new}"
 
+emerge --metadata "${repo_name}"
+
 # If no KEYWORDS are specified try to calculate the best keywords
 if [[ -z "$(unstable_keywords "${ebuild_file_new}")" ]]; then
 	echo "kwtool b ${ebuild_cat}/${ebuild_pkg}-${ebuild_ver}::${repo_name}"
