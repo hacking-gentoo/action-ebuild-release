@@ -87,9 +87,6 @@ cd "${GITHUB_WORKSPACE}" || exit 2
 # Check for a tag
 [[ -z "${GITHUB_REF}" ]] && die "Expecting GITHUB_REF to be a tag"
 
-# Check for github token.
-[[ -z "${INPUT_AUTH_TOKEN}" ]] && die "Must set INPUT_AUTH_TOKEN"
-
 # Check for an overlay
 [[ -z "${INPUT_OVERLAY_REPO}" ]] && die "Must set INPUT_OVERLAY_REPO"
 
@@ -257,9 +254,11 @@ echo "Pushing to git repository"
 git push --force --set-upstream github "${overlay_branch}"
 
 # Create a pull request
-echo "Creating pull request" 
-title="Automated update of ${ebuild_cat}/${ebuild_pkg}"
-msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
-create_pull_request "${overlay_branch}" "master" "${title}" "${msg}" "false" 
+if [[ -n "${INPUT_AUTH_TOKEN}" ]]; then
+	echo "Creating pull request" 
+	title="Automated update of ${ebuild_cat}/${ebuild_pkg}"
+	msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
+	create_pull_request "${overlay_branch}" "master" "${title}" "${msg}" "false" 
+fi
 
 echo "------------------------------------------------------------------------------------------------------------------------"
