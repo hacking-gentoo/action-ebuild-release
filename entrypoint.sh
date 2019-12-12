@@ -203,8 +203,9 @@ echo "Rebuilding manifests (live ebuild)"
 ebuild "${ebuild_file_live}" manifest --force
 
 # Create the new ebuild - $ebuild_ver version.
-echo "Creating new ebuild"
 ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
+echo "Creating new ebuild (${ebuild_file_new})"
+rm -rf "${ebuild_file_new}"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_new}"
 if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
 	sed-or-die "GITHUB_REPOSITORY" "${GITHUB_REPOSITORY}" "${ebuild_file_new}"
