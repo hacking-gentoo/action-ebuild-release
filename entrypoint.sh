@@ -48,7 +48,7 @@ function create_pull_request()
         echo "Pull request from ${src} to ${tgt} is already open!"
     else
         # Post new pull request
-        data="{\"base\":\"${tgt}\", \"head\":\"${src}\", \"title\":\"${title}\", \"body\":\"${body}\", \"draft\":\"${draft}\"}"
+        data="{ \"base\":\"${tgt}\", \"head\":\"${src}\", \"title\":\"${title}\", \"body\":\"${body}\", \"draft\":${draft} }"
         echo "curl -sSL -H \"${auth_hdr}\" -H \"${header}\" --user \"${GITHUB_ACTOR}:\" -X POST --data \"${data}\" \"${pulls_url}\""
         curl -sSL -H "${auth_hdr}" -H "${header}" --user "${GITHUB_ACTOR}:" -X POST --data "${data}" "${pulls_url}" || \
         	die "Unable to create pull request"
