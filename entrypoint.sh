@@ -180,7 +180,7 @@ sort -u -o profiles/categories profiles/categories
 # Copy everything from the template to the new ebuild directory.
 echo "Copying ebuild directory"
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
-cp "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
+cp -R "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
 
 # Create the new ebuild - 9999 live version.
 echo "Creating live ebuild"
