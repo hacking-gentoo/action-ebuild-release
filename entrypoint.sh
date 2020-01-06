@@ -254,7 +254,7 @@ git push --force --set-upstream github "${overlay_branch}"
 # Create a pull request
 if [[ -n "${INPUT_AUTH_TOKEN}" ]]; then
 	echo "Creating pull request" 
-	title="Automated update of ${ebuild_cat}/${ebuild_pkg}"
+	title="Automated release of ${ebuild_cat}/${ebuild_pkg}"
 	msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
 	create_pull_request "${overlay_branch}" "master" "${title}" "${msg}" "false" 
 fi
