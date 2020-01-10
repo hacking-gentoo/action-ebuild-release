@@ -8,6 +8,11 @@ function die()
     exit 1
 }
 
+function infomsg()
+{
+	echo -e "\n${1}\n"
+}
+
 function create_pull_request() 
 {
 	local src tgt title body draft api_ver base_url auth_hdr header pulls_url repo_base query_url resp pr data
@@ -131,7 +136,7 @@ echo "      version ${ebuild_ver}"
 echo "        with name ${ebuild_name}"
 
 # Configure ssh
-echo "Configuring ssh agent"
+infomsg "Configuring ssh agent"
 eval "$(ssh-agent -s)"
 mkdir -p /root/.ssh
 ssh-keyscan github.com >> /root/.ssh/known_hosts
@@ -139,12 +144,12 @@ echo "${INPUT_DEPLOY_KEY}" | ssh-add -
 ssh-add -l
 
 # Configure git
-echo "Configuring git"
+infomsg "Configuring git"
 git config --global user.name "${GITHUB_ACTOR}"
 git config --global user.email "${GITHUB_ACTOR}@github.com"
 
 # Checkout the overlay (master).
-echo "Checkout overlay (master)"
+infomsg "Checkout overlay (master)"
 overlay_dir="/var/db/repos/action-ebuild-release"
 mkdir -p "${overlay_dir}"
 cd "${overlay_dir}"
@@ -153,16 +158,16 @@ git remote add github "git@github.com:${INPUT_OVERLAY_REPO}.git"
 git pull github master 
 
 # Check out the branch or create a new one
-echo "Checkout overlay (${overlay_branch})"
+infomsg "Checkout overlay (${overlay_branch})"
 git pull github "${overlay_branch}" 2>/dev/null || true
 git checkout -b "${overlay_branch}"
 
 # Try to rebase.
-echo "Attempting to rebase against master"
+infomsg "Attempting to rebase against master"
 git rebase master || true
 
 # Add the overlay to repos.conf
-echo "Adding overlay to repos.conf"
+infomsg "Adding overlay to repos.conf"
 repo_name="$(cat profiles/repo_name 2>/dev/null || true)"
 [[ -z "${repo_name}" ]] && repo_name="action-ebuild-release"
 cat << END > /etc/portage/repos.conf/action-ebuild-release
@@ -172,18 +177,18 @@ location = ${overlay_dir}
 END
 
 # Ensure that this ebuild's category is present in categories file.
-echo "Checking this ebuild's category is present in categories file"
+infomsg "Checking this ebuild's category is present in categories file"
 mkdir -p profiles
 echo "${ebuild_cat}" >> profiles/categories
 sort -u -o profiles/categories profiles/categories
 
 # Copy everything from the template to the new ebuild directory.
-echo "Copying ebuild directory"
+infomsg "Copying ebuild directory"
 mkdir -p "${ebuild_cat}/${ebuild_pkg}"
 cp -R "${GITHUB_WORKSPACE}/.gentoo/${ebuild_cat}/${ebuild_pkg}"/* "${ebuild_cat}/${ebuild_pkg}/"
 
 # Create the new ebuild - 9999 live version.
-echo "Creating live ebuild"
+infomsg "Creating live ebuild"
 ebuild_file_live="${ebuild_cat}/${ebuild_pkg}/${ebuild_name}"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_live}" 
 if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
@@ -192,16 +197,16 @@ if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
 fi
 
 # Fix up the KEYWORDS variable in the new ebuild - 9999 live version.
-echo "Fixing up KEYWORDS variable in new ebuild - live version"
+infomsg "Fixing up KEYWORDS variable in new ebuild - live version"
 sed -i 's/^KEYWORDS.*/KEYWORDS=""/g' "${ebuild_file_live}"
 
 # Build / rebuild manifests
-echo "Rebuilding manifests (live ebuild)" 
+infomsg "Rebuilding manifests (live ebuild)" 
 ebuild "${ebuild_file_live}" manifest --force
 
 # Create the new ebuild - $ebuild_ver version.
 ebuild_file_new="${ebuild_cat}/${ebuild_pkg}/${ebuild_pkg}-${ebuild_ver}.ebuild"
-echo "Creating new ebuild (${ebuild_file_new})"
+infomsg "Creating new ebuild (${ebuild_file_new})"
 rm -rf "${ebuild_file_new}"
 unexpand --first-only -t 4 "${GITHUB_WORKSPACE}/.gentoo/${ebuild_path}" > "${ebuild_file_new}"
 if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
@@ -210,10 +215,10 @@ if [[ "${INPUT_PACKAGE_ONLY}" != "true" ]]; then
 fi
 
 # Build / rebuild manifests
-echo "Rebuilding manifests (new ebuild)" 
+infomsg "Rebuilding manifests (new ebuild)" 
 ebuild "${ebuild_file_new}" manifest --force
 
-echo "New ebuild (${ebuild_file_new}):" 
+infomsg "New ebuild (${ebuild_file_new}):" 
 cat "${ebuild_file_new}"
 
 # If no KEYWORDS are specified try to calculate the best keywords
@@ -232,28 +237,28 @@ if [[ $(jq ".release.prerelease" "${GITHUB_EVENT_PATH}") == "true" ]]; then
 fi
 
 # Build / rebuild manifests
-echo "Rebuilding manifests (new ebuild, pass two)" 
+infomsg "Rebuilding manifests (new ebuild, pass two)" 
 ebuild "${ebuild_file_new}" manifest --force
 
 # Add it to git
-echo "Adding files to git"
+infomsg "Adding files to git"
 git add .
 
 # Check it with repoman
-echo "Checking with repoman"
+infomsg "Checking with repoman"
 repoman --straight-to-stable -dx full
 
 # Commit the new ebuild.
-echo "Committing new ebuild"
+infomsg "Committing new ebuild"
 git commit -m "Automated release of ${ebuild_cat}/${ebuild_pkg} version ${ebuild_ver}"
 
 # Push git repo branch
-echo "Pushing to git repository"
+infomsg "Pushing to git repository"
 git push --force --set-upstream github "${overlay_branch}"
 
 # Create a pull request
 if [[ -n "${INPUT_AUTH_TOKEN}" ]]; then
-	echo "Creating pull request" 
+	infomsg "Creating pull request" 
 	title="Automated release of ${ebuild_cat}/${ebuild_pkg}"
 	msg="Automatically generated pull request to update overlay for release of ${ebuild_cat}/${ebuild_pkg}"
 	create_pull_request "${overlay_branch}" "master" "${title}" "${msg}" "false" 
