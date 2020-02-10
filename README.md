@@ -124,7 +124,7 @@ jobs:
         overlay_repo: hacking-gentoo/overlay
 ```
 
-### 5. (Optional) Create tokens / keys for automatic deployment
+### 5. Create tokens / keys for automatic deployment
 
 #### Configuring `PR_TOKEN`
 
